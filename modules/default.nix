@@ -1,7 +1,9 @@
 {
-  arr = ./arr;
-  bkp = ./bkp;
-  mcs = ./mcs;
-  nxc = ./nxc;
-  pxy = ./pxy;
+  imports = [
+    ./pxy
+    ./arr
+    ./bkp
+    ./nxc
+    ./mcs
+  ];
 }

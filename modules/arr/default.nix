@@ -5,7 +5,7 @@
   pkgs,
   ...
 }: {
-  imports = [inputs.self.nixosModules.bastion.pxy];
+  imports = [inputs.bastion.nixosModules.bastion.pxy];
 
   options.arr = {
     enable = lib.mkEnableOption "Media server stack";
@@ -166,7 +166,7 @@
           websockets = false;
         };
       };
-      
+
     # Add media services data to backup when both this module and backup are enabled
     services.borgbackup.jobs.all = lib.mkIf (config.bkp.enable) {
       paths = lib.filterAttrs (_: val: val != null) {

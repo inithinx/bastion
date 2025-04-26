@@ -1,8 +1,8 @@
 {
   arr = ./arr;
-  #bkp = ./bkp;
+  bkp = ./bkp;
   #mcs = ./mcs;
-  #nxc = ./nxc;
+  nxc = ./nxc;
   pxy = ./pxy;
   #rss = ./rss;
 }

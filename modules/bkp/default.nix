@@ -45,53 +45,51 @@ with lib; {
       default = { daily = 7; weekly = 4; monthly = 12; };
       description = "Number of archives to keep per timeframe";
     };
+    
+    extraExclude = mkOption {
+      type = types.listOf types.str;
+      default = [ "/nix" "/run" ];
+      description = "Additional paths to exclude from backups";
+    };
   };
 
+  # Basic input validation
+  assertions = [
+    {
+      assertion = config.bkp.enable -> config.bkp.remoteRepo != null;
+      message = "You must specify bkp.remoteRepo when bkp.enable is true";
+    }
+  ];
+
   config = mkIf config.bkp.enable {
-    # sanity check
-    assert config.bkp.remoteRepo != null; "You must set bkp.remoteRepo";
-
-    # Ensure data dirs exist…
-    systemd.tmpfiles.settings."bkp-proxy" = {
-      path = config.proxy.dataDir; type = "d"; mode = "0755"; user = "root"; group = "root";
-    };
-    systemd.tmpfiles.settings."bkp-media" = {
-      path = config.arr.dataDir;   type = "d"; mode = "0755"; user = "root"; group = "root";
-    };
-
+    # Install borg
     environment.systemPackages = [ pkgs.borgbackup ];
 
+    # Set up basic job configuration
+    # Individual paths are added by respective modules
     services.borgbackup.jobs.all = {
-      repo    = config.bkp.remoteRepo;
-      user    = "root";
-      group   = "root";
-      encryption.mode = config.bkp.encryptionMode;
+      repo  = config.bkp.remoteRepo;
+      user  = "root";
+      group = "root";
 
-      # Hard-code passCommand to 'cat <passFile>' if user provided one
-      encryption.passCommand = config.bkp.passFile
-        // (builtins.isNull config.bkp.passFile ? null
-          : "cat ${config.bkp.passFile}");
+      encryption.mode = config.bkp.encryptionMode;
+      encryption.passCommand =
+        if config.bkp.passFile != null
+        then "cat ${config.bkp.passFile}"
+        else null;
 
       startAt = config.bkp.startAt;
 
       prune.prefix = "";
       prune.keep = {
-        within = config.bkp.pruneWithin;
+        within  = config.bkp.pruneWithin;
         inherit (config.bkp.pruneKeep) daily weekly monthly;
       };
 
-      exclude = [ "/nix" "/run" ];
+      exclude = config.bkp.extraExclude;
 
-      paths = concatLists [
-        [ config.proxy.dataDir ]
-        (filterAttrs (_: val: val != null) {
-          jellyfin = if config.services.jellyfin.enable then config.services.jellyfin.dataDir else null;
-          sonarr   = if config.services.sonarr.enable   then config.services.sonarr.dataDir   else null;
-          radarr   = if config.services.radarr.enable   then config.services.radarr.dataDir   else null;
-          lidarr   = if config.services.lidarr.enable   then config.services.lidarr.dataDir   else null;
-          deluge   = if config.services.deluge.enable   then config.services.deluge.dataDir   else null;
-        })
-      ];
+      # Path definition is delegated to individual modules using services.borgbackup.jobs.all.paths
+      # instead of hardcoding them here
 
       environment = optionalAttrs (config.bkp.sshKeyFile != null) {
         BORG_RSH = "ssh -i ${config.bkp.sshKeyFile} -o StrictHostKeyChecking=no";
@@ -99,4 +97,3 @@ with lib; {
     };
   };
 }
-

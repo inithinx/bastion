@@ -78,7 +78,7 @@
       dataDir = "${config.arr.dataDir}/lidarr";
     };
 
-    # Prowlarr (upstream doesn’t yet support dataDir, so we skip it)
+    # Prowlarr (upstream doesn't yet support dataDir, so we skip it)
     services.prowlarr = {
       enable = true;
       # dataDir = "${config.arr.dataDir}/prowlarr";  # future when supported
@@ -166,31 +166,32 @@
           websockets = false;
         };
       };
-  };
-  # Add media services data to backup when both this module and backup are enabled
-  services.borgbackup.jobs.all = lib.mkIf (config.arr.enable && config.bkp.enable) {
-    paths = lib.filterAttrs (_: val: val != null) {
-      jellyfin =
-        if config.services.jellyfin.enable
-        then config.services.jellyfin.dataDir
-        else null;
-      sonarr =
-        if config.services.sonarr.enable
-        then config.services.sonarr.dataDir
-        else null;
-      radarr =
-        if config.services.radarr.enable
-        then config.services.radarr.dataDir
-        else null;
-      lidarr =
-        if config.services.lidarr.enable
-        then config.services.lidarr.dataDir
-        else null;
-      deluge =
-        if config.services.deluge.enable
-        then config.services.deluge.dataDir
-        else null;
-      # Add any other services that might need backup
+      
+    # Add media services data to backup when both this module and backup are enabled
+    services.borgbackup.jobs.all = lib.mkIf (config.bkp.enable) {
+      paths = lib.filterAttrs (_: val: val != null) {
+        jellyfin =
+          if config.services.jellyfin.enable
+          then config.services.jellyfin.dataDir
+          else null;
+        sonarr =
+          if config.services.sonarr.enable
+          then config.services.sonarr.dataDir
+          else null;
+        radarr =
+          if config.services.radarr.enable
+          then config.services.radarr.dataDir
+          else null;
+        lidarr =
+          if config.services.lidarr.enable
+          then config.services.lidarr.dataDir
+          else null;
+        deluge =
+          if config.services.deluge.enable
+          then config.services.deluge.dataDir
+          else null;
+        # Add any other services that might need backup
+      };
     };
   };
 }

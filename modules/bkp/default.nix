@@ -69,7 +69,7 @@ with lib; {
     }
   ];
 
-  config = mkIf config.bkp.enable {
+  config = lib.mkIf config.bkp.enable {
     # Install borg
     environment.systemPackages = [pkgs.borgbackup];
 

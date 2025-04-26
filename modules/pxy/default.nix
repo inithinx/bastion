@@ -44,7 +44,7 @@ with lib; {
     };
   };
 
-  config = mkIf config.proxy.enable {
+  config = lib.mkIf config.proxy.enable {
     # ensure your dataDir exists
     systemd.tmpfiles.settings = {
       "proxy-data" = {
@@ -107,7 +107,7 @@ with lib; {
     };
   };
   # Add proxy data to backup when both this module and backup are enabled
-  services.borgbackup.jobs.all = mkIf (config.proxy.enable && config.bkp.enable) {
+  services.borgbackup.jobs.all = lib.mkIf (config.proxy.enable && config.bkp.enable) {
     paths = [config.proxy.dataDir];
   };
 }

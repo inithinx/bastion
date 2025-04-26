@@ -80,7 +80,7 @@ with lib; {
     };
   };
 
-  config = mkIf (config.nxc.enable && config.proxy.enable) {
+  config = lib.mkIf (config.nxc.enable && config.proxy.enable) {
     # Ensure data directory exists
     systemd.tmpfiles.settings."nxc-data" = {
       path = config.nxc.dataDir;
@@ -167,7 +167,7 @@ with lib; {
     };
 
     # Configure Collabora Online
-    services.collabora = mkIf config.nxc.collabora.enable {
+    services.collabora = lib.mkIf config.nxc.collabora.enable {
       enable = true;
       extraConfig = {
         storage.wopi.host = "${config.nxc.domain}:443";
@@ -223,7 +223,7 @@ with lib; {
       );
 
     # Add Nextcloud backup paths when both this module and backup are enabled
-    services.borgbackup.jobs.all = mkIf config.bkp.enable {
+    services.borgbackup.jobs.all = lib.mkIf config.bkp.enable {
       paths = [config.nxc.dataDir];
     };
 

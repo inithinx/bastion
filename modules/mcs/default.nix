@@ -131,9 +131,9 @@ with lib; {
     };
   };
 
-  config = mkIf config.mcs.enable {
+  config = lib.mkIf config.mcs.enable {
     # Create the minecraft user and group if they don't exist
-    users.users = mkIf (config.mcs.user == "minecraft") {
+    users.users = lib.mkIf (config.mcs.user == "minecraft") {
       minecraft = {
         isSystemUser = true;
         group = config.mcs.group;
@@ -143,7 +143,7 @@ with lib; {
       };
     };
 
-    users.groups = mkIf (config.mcs.group == "minecraft") {
+    users.groups = lib.mkIf (config.mcs.group == "minecraft") {
       minecraft = {};
     };
 
@@ -193,7 +193,7 @@ with lib; {
     };
 
     # Install plugins
-    system.activationScripts.installMinecraftPlugins = mkIf (config.mcs.plugins != []) {
+    system.activationScripts.installMinecraftPlugins = lib.mkIf (config.mcs.plugins != []) {
       text = ''
         mkdir -p ${config.mcs.dataDir}/plugins
         chown ${config.mcs.user}:${config.mcs.group} ${config.mcs.dataDir}/plugins
@@ -209,7 +209,7 @@ with lib; {
     };
 
     # Web admin panel (mcadmin)
-    services.mcadmin = mkIf config.mcs.webAdmin.enable {
+    services.mcadmin = lib.mkIf config.mcs.webAdmin.enable {
       enable = true;
       port = config.mcs.webAdmin.port;
       rconHost = "localhost";
@@ -227,7 +227,7 @@ with lib; {
     };
 
     # Nginx configuration for web admin panel
-    proxy.virtualHosts = mkIf (config.mcs.webAdmin.enable && config.proxy.enable) {
+    proxy.virtualHosts = lib.mkIf (config.mcs.webAdmin.enable && config.proxy.enable) {
       "${config.mcs.domain}" = {
         forceSSL = true;
         useACMEHost = config.proxy.primaryDomain;
@@ -239,12 +239,12 @@ with lib; {
     };
 
     # Add minecraft data to backup path
-    services.borgbackup.jobs.all = mkIf config.bkp.enable {
+    services.borgbackup.jobs.all = lib.mkIf config.bkp.enable {
       paths = [config.mcs.dataDir];
     };
 
     # Firewall configuration
-    networking.firewall = mkIf config.mcs.openFirewall {
+    networking.firewall = lib.mkIf config.mcs.openFirewall {
       allowedTCPPorts = [config.mcs.port];
       allowedUDPPorts = [config.mcs.port];
     };

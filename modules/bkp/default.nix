@@ -1,5 +1,9 @@
-{ config, lib, pkgs, ... }:
-
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib; {
   options.bkp = {
     enable = mkEnableOption "Enable Borg backups for all enabled services";
@@ -17,7 +21,7 @@ with lib; {
     };
 
     encryptionMode = mkOption {
-      type = types.enum [ "none" "repokey" "repokey-blake2" "keyfile" "keyfile-blake2" "authenticated" "authenticated-blake2" ];
+      type = types.enum ["none" "repokey" "repokey-blake2" "keyfile" "keyfile-blake2" "authenticated" "authenticated-blake2"];
       default = "repokey-blake2";
       description = "Borg encryption mode";
     };
@@ -42,13 +46,17 @@ with lib; {
 
     pruneKeep = mkOption {
       type = types.attrsOf types.int;
-      default = { daily = 7; weekly = 4; monthly = 12; };
+      default = {
+        daily = 7;
+        weekly = 4;
+        monthly = 12;
+      };
       description = "Number of archives to keep per timeframe";
     };
-    
+
     extraExclude = mkOption {
       type = types.listOf types.str;
-      default = [ "/nix" "/run" ];
+      default = ["/nix" "/run"];
       description = "Additional paths to exclude from backups";
     };
   };
@@ -63,13 +71,13 @@ with lib; {
 
   config = mkIf config.bkp.enable {
     # Install borg
-    environment.systemPackages = [ pkgs.borgbackup ];
+    environment.systemPackages = [pkgs.borgbackup];
 
     # Set up basic job configuration
     # Individual paths are added by respective modules
     services.borgbackup.jobs.all = {
-      repo  = config.bkp.remoteRepo;
-      user  = "root";
+      repo = config.bkp.remoteRepo;
+      user = "root";
       group = "root";
 
       encryption.mode = config.bkp.encryptionMode;
@@ -82,7 +90,7 @@ with lib; {
 
       prune.prefix = "";
       prune.keep = {
-        within  = config.bkp.pruneWithin;
+        within = config.bkp.pruneWithin;
         inherit (config.bkp.pruneKeep) daily weekly monthly;
       };
 

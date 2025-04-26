@@ -108,6 +108,6 @@ with lib; {
   };
   # Add proxy data to backup when both this module and backup are enabled
   services.borgbackup.jobs.all = mkIf (config.proxy.enable && config.bkp.enable) {
-    paths = [ config.proxy.dataDir ];
+    paths = [config.proxy.dataDir];
   };
 }

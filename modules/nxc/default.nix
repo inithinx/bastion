@@ -1,5 +1,9 @@
-{ config, lib, pkgs, ... }:
-
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 with lib; {
   options.nxc = {
     enable = mkEnableOption "Enable Nextcloud";
@@ -49,20 +53,20 @@ with lib; {
 
     collabora = {
       enable = mkEnableOption "Enable Collabora Online integration";
-      
+
       domain = mkOption {
         type = types.str;
         default = "collabora.${config.proxy.primaryDomain}";
         description = "Domain for Collabora Online";
       };
-      
+
       dictionaries = mkOption {
         type = types.listOf types.str;
-        default = [ "en_US" "en_GB" ];
+        default = ["en_US" "en_GB"];
         description = "Dictionaries to install for Collabora";
       };
     };
-    
+
     extraSettings = mkOption {
       type = types.attrs;
       default = {};
@@ -89,13 +93,15 @@ with lib; {
     # Configure PostgreSQL
     services.postgresql = {
       enable = true;
-      ensureDatabases = [ "nextcloud" ];
-      ensureUsers = [{
-        name = "nextcloud";
-        ensurePermissions = {
-          "DATABASE nextcloud" = "ALL PRIVILEGES";
-        };
-      }];
+      ensureDatabases = ["nextcloud"];
+      ensureUsers = [
+        {
+          name = "nextcloud";
+          ensurePermissions = {
+            "DATABASE nextcloud" = "ALL PRIVILEGES";
+          };
+        }
+      ];
     };
 
     # Configure Redis (using Valkey)
@@ -115,7 +121,7 @@ with lib; {
       package = pkgs.nextcloud28;
       hostName = config.nxc.domain;
       datadir = config.nxc.dataDir;
-      
+
       # Database
       config = {
         dbtype = "pgsql";
@@ -126,7 +132,7 @@ with lib; {
         adminpassFile = config.nxc.adminPassFile;
         defaultPhoneRegion = "US"; # Default phone region
       };
-      
+
       # Redis cache
       configureRedis = true;
       redis = {
@@ -134,19 +140,21 @@ with lib; {
         port = 6379;
         dbIndex = 0;
       };
-      
+
       # Automatic app installation
       autoUpdateApps.enable = true;
       autoUpdateApps.startAt = "05:00:00";
       apps = config.nxc.enabledApps;
-      
+
       # Extra settings
-      extraOptions = config.nxc.extraSettings // (
-        optionalAttrs config.nxc.collabora.enable {
-          "office.server" = "https://${config.nxc.collabora.domain}";
-        }
-      );
-      
+      extraOptions =
+        config.nxc.extraSettings
+        // (
+          optionalAttrs config.nxc.collabora.enable {
+            "office.server" = "https://${config.nxc.collabora.domain}";
+          }
+        );
+
       # PHP settings
       phpOptions = {
         "upload_max_filesize" = config.nxc.maxUploadSize;
@@ -173,35 +181,19 @@ with lib; {
     };
 
     # Add to proxy configuration
-    proxy.virtualHosts = {
-      "${config.nxc.domain}" = {
-        forceSSL = true;
-        useACMEHost = config.proxy.primaryDomain;
-        locations = {
-          "/" = {
-            proxyPass = "http://127.0.0.1:${toString config.services.nextcloud.port}";
-            proxyWebsockets = true;
-            extraConfig = ''
-              client_max_body_size ${config.nxc.maxUploadSize};
-              fastcgi_read_timeout 3600s;
-              fastcgi_send_timeout 3600s;
-              proxy_read_timeout 3600s;
-              proxy_connect_timeout 3600s;
-              proxy_send_timeout 3600s;
-            '';
-          };
-        };
-      };
-    } // (
-      optionalAttrs config.nxc.collabora.enable {
-        "${config.nxc.collabora.domain}" = {
+    proxy.virtualHosts =
+      {
+        "${config.nxc.domain}" = {
           forceSSL = true;
           useACMEHost = config.proxy.primaryDomain;
           locations = {
             "/" = {
-              proxyPass = "http://127.0.0.1:${toString config.services.collabora.port}";
+              proxyPass = "http://127.0.0.1:${toString config.services.nextcloud.port}";
               proxyWebsockets = true;
               extraConfig = ''
+                client_max_body_size ${config.nxc.maxUploadSize};
+                fastcgi_read_timeout 3600s;
+                fastcgi_send_timeout 3600s;
                 proxy_read_timeout 3600s;
                 proxy_connect_timeout 3600s;
                 proxy_send_timeout 3600s;
@@ -210,17 +202,35 @@ with lib; {
           };
         };
       }
-    );
+      // (
+        optionalAttrs config.nxc.collabora.enable {
+          "${config.nxc.collabora.domain}" = {
+            forceSSL = true;
+            useACMEHost = config.proxy.primaryDomain;
+            locations = {
+              "/" = {
+                proxyPass = "http://127.0.0.1:${toString config.services.collabora.port}";
+                proxyWebsockets = true;
+                extraConfig = ''
+                  proxy_read_timeout 3600s;
+                  proxy_connect_timeout 3600s;
+                  proxy_send_timeout 3600s;
+                '';
+              };
+            };
+          };
+        }
+      );
 
     # Add Nextcloud backup paths when both this module and backup are enabled
     services.borgbackup.jobs.all = mkIf config.bkp.enable {
-      paths = [ config.nxc.dataDir ];
+      paths = [config.nxc.dataDir];
     };
 
     # System services dependencies
     systemd.services.nextcloud-setup = {
-      requires = [ "postgresql.service" ];
-      after = [ "postgresql.service" "valkey-nextcloud.service" ];
+      requires = ["postgresql.service"];
+      after = ["postgresql.service" "valkey-nextcloud.service"];
     };
   };
 }

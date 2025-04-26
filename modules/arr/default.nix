@@ -169,7 +169,7 @@
   };
   # Add media services data to backup when both this module and backup are enabled
   services.borgbackup.jobs.all = lib.mkIf (config.arr.enable && config.bkp.enable) {
-    paths = filterAttrs (_: val: val != null) {
+    paths = lib.filterAttrs (_: val: val != null) {
       jellyfin =
         if config.services.jellyfin.enable
         then config.services.jellyfin.dataDir
